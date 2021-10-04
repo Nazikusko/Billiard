@@ -9,7 +9,9 @@ public class UIMessageBoxScript : MonoBehaviour
 
     public void ShowMessage(string txtmessage)
     {
-        textCompotent = transform.Find("Message").GetComponent<Text>();
+        if (textCompotent == null)
+            textCompotent = transform.Find("Message").GetComponent<Text>();
+
         textCompotent.text = txtmessage;
         gameObject.SetActive(true);
     }

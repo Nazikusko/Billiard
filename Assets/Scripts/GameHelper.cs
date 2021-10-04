@@ -114,11 +114,10 @@ public class GameHelper : SingleTon<GameHelper>
 
     public void SetCue(Vector3 worldpoint)
     {
-        if (!isAllBallsSleep || gameStatus == GameStatus.EndGame) return;
-        gameStatus = GameStatus.CueAiming;
-
-        if (Vector3.Distance(worldpoint, Balls[0].transform.position) < MINCUESETDISTANCE)
+        if (!isAllBallsSleep || gameStatus == GameStatus.EndGame || Vector3.Distance(worldpoint, Balls[0].transform.position) < MINCUESETDISTANCE)
             return;
+
+        gameStatus = GameStatus.CueAiming;
 
         currenDistanceCue = setDistanceCue = Vector3.Distance(Balls[0].transform.position, worldpoint);
 
@@ -142,7 +141,7 @@ public class GameHelper : SingleTon<GameHelper>
         Cue.transform.position = Balls[0].transform.position;
 
         if (dist > MINCUESETDISTANCE)
-            Cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldpoint), Vector3.up); // поворот кия по вектору
+            Cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldpoint), Vector3.up); //поворот кия по вектору
 
         Cue.transform.Translate(Vector3.back * MINCUESETDISTANCE);
         Cue.transform.Translate(new Vector3(0, 0, setDistanceCue - currenDistanceCue), Space.Self);
