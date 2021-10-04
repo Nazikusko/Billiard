@@ -131,7 +131,7 @@ public class GameHelper : SingleTon<GameHelper>
 
     public void UpdateAimingCue(Vector3 worldpoint)
     {
-        if (Cue == null || gameStatus != GameStatus.CueAiming) return;
+        if (gameStatus != GameStatus.CueAiming) return;
         lastWorldpoint = worldpoint;
         float dist = Vector3.Distance(Balls[0].transform.position, worldpoint);
 
@@ -229,13 +229,6 @@ public class GameHelper : SingleTon<GameHelper>
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            for (int i = 1; i < 16; i++)
-            {
-                Destroy(Balls[i]);
-            }
-        }
 
         if (gameStatus == GameStatus.CueHiting) //Animation of cue hit
         {
