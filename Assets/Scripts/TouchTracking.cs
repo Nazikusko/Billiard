@@ -12,7 +12,7 @@ public class TouchTracking : MonoBehaviour, IDragHandler, IBeginDragHandler, IEn
     {
         RaycastHit hitPoint;
         var ray = Cam.ScreenPointToRay(touchPoint);
-        if (Physics.Raycast(ray, out hitPoint, 100.0f, LAYERMASKTOUCH))
+        if (Physics.Raycast(ray, out hitPoint, 200.0f, LAYERMASKTOUCH))
         {
             point = hitPoint.point;
             return true;
