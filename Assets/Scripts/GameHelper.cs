@@ -1,85 +1,83 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 
 class BallsData
 {
-    public Vector3 Position;
-    public Quaternion Rotation;
+    public Vector3 position;
+    public Quaternion rotation;
 }
 public enum GameStatus
 {
     Idle,
     CueAiming,
-    CueHiting,
+    CueHitting,
     CueHit,
-    BallsRool,
+    BallsRoll,
     EndGame
 }
 
-public class GameHelper : SingleTon<GameHelper>
+public class GameHelper : Singleton<GameHelper>
 {
-    public const float BALLDIAMETR = 0.572f;
-    const float MAXCUEDISTANCE = 2.5f;
-    const float MINCUESETDISTANCE = 0.8f;
-    const float MINFORCEHITCUE = 2f;
-    const float FORSECUEMULTIPLAYER = 3f;
-    const float SLEEPTHRESHOLD = 0.75f;
-    const float DRAWTRAJECTORYPERIOD = 0.8f;
+    public const float BALL_DIAMETR = 0.572f;
+    const float MAX_CUE_DISTANCE = 2.5f;
+    const float MIN_CUE_DISTANCE = 0.8f;
+    const float MIN_FORCE_HIT_CUE = 2f;
+    const float FORCE_CUE_MULTIPLAYER = 3f;
+    const float SLEEP_THRESHOLD = 0.75f;
+    const float DRAW_TRAJECTORY_PERIOD = 0.8f;
 
-    public GameObject Cue;
-    public TrajectoryRenderer TrajectoryRendererScript;
-    public UIMessageBoxScript messageBox;
+    [SerializeField] private GameObject _cue;
+    [SerializeField] private TrajectoryRenderer _trajectoryRendererScript;
+    [SerializeField] private UIMessageBoxScript _messageBox;
 
-    private bool isAllBallsSleep;
+    private bool _isAllBallsSleep;
     public bool IsAllBallsSleep
     {
-        get { return isAllBallsSleep; }
+        get => _isAllBallsSleep;
+
         private set
         {
-            if (value == true && IsAllBallsSleep == false) gameStatus = GameStatus.Idle;
-            if (value == false && IsAllBallsSleep == true) gameStatus = GameStatus.BallsRool;
-            isAllBallsSleep = value;
+            if (value == true && _isAllBallsSleep == false) GameStatus = GameStatus.Idle;
+            if (value == false && _isAllBallsSleep == true) GameStatus = GameStatus.BallsRoll;
+            _isAllBallsSleep = value;
         }
     }
-    [HideInInspector]
-    public Rigidbody[] BallsRB { get; private set; } = new Rigidbody[16];
 
-    private GameObject[] Balls = new GameObject[16];
-    private BallsData[] ballsCañheData = new BallsData[16];
-    private Vector3 lastWorldpoint;
-    private float setDistanceCue;
-    private float currenDistanceCue = 0;
+    public GameStatus GameStatus { get; private set; }
 
+    [HideInInspector] public Rigidbody[] BallsRB { get; private set; } = new Rigidbody[16];
 
-    public GameStatus gameStatus { get; private set; }
+    private GameObject[] _balls = new GameObject[16];
+    private BallsData[] _ballsCacheData = new BallsData[16];
+    private Vector3 _lastWorldPoint;
+    private float _setDistanceCue;
+    private float _currentDistanceCue = 0;
 
     private void Start()
     {
-        string strI;
         for (int i = 0; i < 16; i++)
         {
+            string index;
             if (i > 9)
-                strI = i.ToString();
+                index = i.ToString();
             else
-                strI = "0" + i.ToString();
+                index = "0" + i;
 
-            Balls[i] = GameObject.Find("Ball_" + strI);
-            BallsRB[i] = Balls[i].GetComponent<Rigidbody>();
-            BallsRB[i].sleepThreshold = SLEEPTHRESHOLD;
-            ballsCañheData[i] = new BallsData();
+            _balls[i] = GameObject.Find("Ball_" + index);
+            BallsRB[i] = _balls[i].GetComponent<Rigidbody>();
+            BallsRB[i].sleepThreshold = SLEEP_THRESHOLD;
+            _ballsCacheData[i] = new BallsData();
         }
-        Cue.SetActive(false);
-        messageBox.HideMessageBox();
-        StartCoroutine(CheckBallsVelocityStatus());
+        _cue.SetActive(false);
+        _messageBox.HideMessageBox();
+        StartCoroutine(CheckGameStatus());
         StartCoroutine(CalculateTrajectory());
     }
     private Vector3 CalculateDirectionVectorToBall(Vector3 point)
     {
-        return Balls[0].transform.position - point;
+        return _balls[0].transform.position - point;
     }
 
     private bool CheckBallsVelocity() //return true if all balls is sleep
@@ -90,11 +88,12 @@ public class GameHelper : SingleTon<GameHelper>
         }
         return true;
     }
+
     private bool CheckForEndGame()
     {
         for (int i = 1; i < 16; i++)
         {
-            if (Balls[i] != null)
+            if (_balls[i] != null)
                 return false;
         }
         return true;
@@ -106,76 +105,77 @@ public class GameHelper : SingleTon<GameHelper>
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    Vector3 CalculeteForce(Vector3 worldPoint)
+    Vector3 CalculateForce(Vector3 worldPoint)
     {
-        Vector3 forcevector = Vector3.ProjectOnPlane(CalculateDirectionVectorToBall(worldPoint), Vector3.up);
-        return forcevector * (((currenDistanceCue - setDistanceCue) * FORSECUEMULTIPLAYER) + MINFORCEHITCUE);
+        Vector3 forceVector = Vector3.ProjectOnPlane(CalculateDirectionVectorToBall(worldPoint), Vector3.up);
+        return forceVector * (((_currentDistanceCue - _setDistanceCue) * FORCE_CUE_MULTIPLAYER) + MIN_FORCE_HIT_CUE);
     }
 
-    public void SetCue(Vector3 worldpoint)
+    public void SetCue(Vector3 worldPoint)
     {
-        if (!isAllBallsSleep || gameStatus == GameStatus.EndGame || Vector3.Distance(worldpoint, Balls[0].transform.position) < MINCUESETDISTANCE)
+        if (!_isAllBallsSleep || GameStatus == GameStatus.EndGame || Vector3.Distance(worldPoint, _balls[0].transform.position) < MIN_CUE_DISTANCE)
             return;
 
-        gameStatus = GameStatus.CueAiming;
+        GameStatus = GameStatus.CueAiming;
 
-        currenDistanceCue = setDistanceCue = Vector3.Distance(Balls[0].transform.position, worldpoint);
+        _currentDistanceCue = _setDistanceCue = Vector3.Distance(_balls[0].transform.position, worldPoint);
 
-        Cue.SetActive(true);
-        Cue.transform.position = Balls[0].transform.position;
-        Cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldpoint), Vector3.up);
-        Cue.transform.Translate(Vector3.back * MINCUESETDISTANCE);
+        _cue.SetActive(true);
+        _cue.transform.position = _balls[0].transform.position;
+        _cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldPoint), Vector3.up);
+        _cue.transform.Translate(Vector3.back * MIN_CUE_DISTANCE);
 
     }
 
-    public void UpdateAimingCue(Vector3 worldpoint)
+    public void UpdateAimingCue(Vector3 worldPoint)
     {
-        if (gameStatus != GameStatus.CueAiming) return;
-        lastWorldpoint = worldpoint;
-        float dist = Vector3.Distance(Balls[0].transform.position, worldpoint);
+        if (GameStatus != GameStatus.CueAiming) return;
+        _lastWorldPoint = worldPoint;
+        float dist = Vector3.Distance(_balls[0].transform.position, worldPoint);
 
-        //Ïðîâåðêà íà ïðåâûøåíèå ìàêñèìàëüíîãî ðàññòîÿíèÿ
-        if (dist > setDistanceCue && dist - setDistanceCue < MAXCUEDISTANCE)
-            currenDistanceCue = dist;
 
-        Cue.transform.position = Balls[0].transform.position;
+        if (dist > _setDistanceCue && dist - _setDistanceCue < MAX_CUE_DISTANCE)
+            _currentDistanceCue = dist;
 
-        if (dist > MINCUESETDISTANCE)
-            Cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldpoint), Vector3.up); //ïîâîðîò êèÿ ïî âåêòîðó
+        _cue.transform.position = _balls[0].transform.position;
 
-        Cue.transform.Translate(Vector3.back * MINCUESETDISTANCE);
-        Cue.transform.Translate(new Vector3(0, 0, setDistanceCue - currenDistanceCue), Space.Self);
+        if (dist > MIN_CUE_DISTANCE)
+            _cue.transform.rotation = Quaternion.LookRotation(CalculateDirectionVectorToBall(worldPoint), Vector3.up);
+
+        _cue.transform.Translate(Vector3.back * MIN_CUE_DISTANCE);
+        _cue.transform.Translate(new Vector3(0, 0, _setDistanceCue - _currentDistanceCue), Space.Self);
     }
 
     //Start moving cue
-    public void StartHit(Vector3 worldPoint)
+    public void StartHit(Vector3 _)
     {
-        gameStatus = GameStatus.CueHiting;
+        GameStatus = GameStatus.CueHitting;
     }
 
     public void HitCue()
     {
-        if (gameStatus != GameStatus.CueHiting) return;
-        Cue.SetActive(false);
-        BallsRB[0].AddForce(CalculeteForce(lastWorldpoint), ForceMode.Impulse);
-        gameStatus = GameStatus.BallsRool;
-        TrajectoryRendererScript.HideTrajectory();
+        if (GameStatus != GameStatus.CueHitting) return;
+
+        _cue.SetActive(false);
+        BallsRB[0].AddForce(CalculateForce(_lastWorldPoint), ForceMode.Impulse);
+        GameStatus = GameStatus.BallsRoll;
+        _trajectoryRendererScript.HideTrajectory();
     }
 
     public void WhiteBallInPocket()
     {
         StopAllCoroutines();
-        gameStatus = GameStatus.EndGame;
-        messageBox.ShowMessage("YOU LOSE");
+        GameStatus = GameStatus.EndGame;
+        _messageBox.ShowMessage("YOU LOSE", ReloadScene);
     }
 
     public void SaveBallsPosition()
     {
         for (int i = 0; i < 16; i++)
         {
-            if (Balls[i] == null) continue;
-            ballsCañheData[i].Position = Balls[i].transform.position;
-            ballsCañheData[i].Rotation = Balls[i].transform.rotation;
+            if (_balls[i] == null) continue;
+            _ballsCacheData[i].position = _balls[i].transform.position;
+            _ballsCacheData[i].rotation = _balls[i].transform.rotation;
         }
     }
 
@@ -183,11 +183,11 @@ public class GameHelper : SingleTon<GameHelper>
     {
         for (int i = 0; i < 16; i++)
         {
-            if (Balls[i] == null) continue;
-            if (Balls[i].activeSelf == false) Balls[i].SetActive(true);
+            if (_balls[i] == null) continue;
+            if (_balls[i].activeSelf == false) _balls[i].SetActive(true);
             BallsRB[i].Sleep();
-            Balls[i].transform.position = ballsCañheData[i].Position;
-            Balls[i].transform.rotation = ballsCañheData[i].Rotation;
+            _balls[i].transform.position = _ballsCacheData[i].position;
+            _balls[i].transform.rotation = _ballsCacheData[i].rotation;
         }
 
     }
@@ -198,7 +198,7 @@ public class GameHelper : SingleTon<GameHelper>
         ball.transform.localPosition = new Vector3(12.8f, 0, Random.Range(-4.8f, 4.8f)); //return out ball on the table
     }
 
-    IEnumerator CheckBallsVelocityStatus() //check if all balls have stopped
+    IEnumerator CheckGameStatus() //check if all balls have stopped
     {
         do
         {
@@ -207,35 +207,33 @@ public class GameHelper : SingleTon<GameHelper>
 
             if (CheckForEndGame())
             {
-                gameStatus = GameStatus.EndGame;
-                messageBox.ShowMessage("YOU WIN");
+                GameStatus = GameStatus.EndGame;
+                _messageBox.ShowMessage("YOU WIN", ReloadScene);
                 StopAllCoroutines();
             }
         } while (true);
     }
 
-    IEnumerator CalculateTrajectory() //drawTrajectory on 1 per time
+    IEnumerator CalculateTrajectory() //draw trajectory on 1 per time
     {
         do
         {
-            yield return new WaitForSecondsRealtime(DRAWTRAJECTORYPERIOD);
-            if (gameStatus == GameStatus.CueAiming)
-            {
-                TrajectoryRendererScript.ShowTrajectory(CalculeteForce(lastWorldpoint));
-            }
+            yield return new WaitForSecondsRealtime(DRAW_TRAJECTORY_PERIOD);
+
+            if (GameStatus == GameStatus.CueAiming)
+                _trajectoryRendererScript.ShowTrajectory(CalculateForce(_lastWorldPoint));
+
         } while (true);
     }
 
     private void Update()
     {
 
-        if (gameStatus == GameStatus.CueHiting) //Animation of cue hit
+        if (GameStatus == GameStatus.CueHitting) //Animation of cue hit
         {
-            Cue.transform.Translate(new Vector3(0, 0, Time.deltaTime * 20f), Space.Self);
-            if (Vector3.Distance(Cue.transform.position, Balls[0].transform.position) < BALLDIAMETR / 2f)
+            _cue.transform.Translate(new Vector3(0, 0, Time.deltaTime * 20f), Space.Self);
+            if (Vector3.Distance(_cue.transform.position, _balls[0].transform.position) < BALL_DIAMETR / 2f)
                 HitCue();
         }
     }
-
-
 }

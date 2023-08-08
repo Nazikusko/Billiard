@@ -1,19 +1,27 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class UIMessageBoxScript : MonoBehaviour
 {
-    Text textCompotent;
+    [SerializeField] private Text _textMessage;
+    [SerializeField] private Button _okButton;
 
-    public void ShowMessage(string txtmessage)
+    public void ShowMessage(string message, Action onButtonClick)
     {
-        if (textCompotent == null)
-            textCompotent = transform.Find("Message").GetComponent<Text>();
-
-        textCompotent.text = txtmessage;
+        _textMessage.text = message;
         gameObject.SetActive(true);
+        
+        _okButton.onClick.AddListener(() =>
+        {
+            onButtonClick?.Invoke();
+            HideMessageBox();
+        });
+    }
+
+    void OnDisable()
+    {
+        _okButton.onClick.RemoveAllListeners();
     }
 
     public void HideMessageBox()

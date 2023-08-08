@@ -1,25 +1,26 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BallsControl : MonoBehaviour
 {
-    private AudioClip sound;
+    private AudioClip _sound;
+    private Rigidbody _rigidBody;
 
-    private void Start()
+    private void Awake()
     {
-        sound = Resources.Load<AudioClip>("Sounds/BallHit");
+        _sound = Resources.Load<AudioClip>("Sounds/BallHit");
+        _rigidBody = gameObject.GetComponent<Rigidbody>();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (GameHelper.Use.gameStatus == GameStatus.CueAiming && collision.gameObject.name == "Ball_00")
+        if (GameHelper.Instance.GameStatus == GameStatus.CueAiming && collision.gameObject.name == "Ball_00")
         {
-            TrajectoryRenderer.Use.SwitchOnSecondTrajectory(gameObject.GetComponent<Rigidbody>(), collision.gameObject);
+            TrajectoryRenderer.Instance.SwitchOnSecondTrajectory(_rigidBody, collision.gameObject);
         }
-        if (GameHelper.Use.gameStatus == GameStatus.BallsRool && collision.gameObject.name.Contains("Ball"))
+
+        if (GameHelper.Instance.GameStatus == GameStatus.BallsRoll && collision.gameObject.name.Contains("Ball"))
         {
-            AudioSource.PlayClipAtPoint(sound, transform.position, collision.relativeVelocity.magnitude * 0.05f);
+            AudioSource.PlayClipAtPoint(_sound, transform.position, collision.relativeVelocity.magnitude * 0.05f);
         }
     }
 }

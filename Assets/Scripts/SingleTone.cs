@@ -2,16 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SingleTon<T> : MonoBehaviour where T : MonoBehaviour
+public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
-    private static T use;
-    public static T Use
+    private static T _instance;
+    public static T Instance
     {
         get
         {
-            if (use == null) use = FindObjectOfType<T>();
-            if (use == null) use = new GameObject("SINGLETON" + typeof(T)).AddComponent<T>();
-            return use;
+            if (_instance == null) _instance = FindObjectOfType<T>();
+            if (_instance == null) _instance = new GameObject("SINGLETON" + typeof(T)).AddComponent<T>();
+            return _instance;
         }
     }
 }

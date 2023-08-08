@@ -1,15 +1,13 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TrajectoryRenderer : SingleTon<TrajectoryRenderer>
+public class TrajectoryRenderer : Singleton<TrajectoryRenderer>
 {
-    public LineRenderer SecondLineRendereComponent;
-    public LineRenderer FirstLineRendereComponent;
-    public GameObject TransparentBall;
+    [SerializeField] private LineRenderer _firstLineRendererComponent;
+    [SerializeField] private LineRenderer _secondLineRendererComponent;
+    [SerializeField] private GameObject _transparentBall;
 
-    private Rigidbody ballRBforSecondTrajectory;
+    private Rigidbody _ballForSecondTrajectory;
 
     private void Start()
     {
@@ -19,49 +17,49 @@ public class TrajectoryRenderer : SingleTon<TrajectoryRenderer>
     public void ShowTrajectory(Vector3 force)
     {
         Vector3[] points = new Vector3[50];
-        List<Vector3> listSecondpoints = new List<Vector3>();
+        List<Vector3> secondPointsList = new List<Vector3>();
 
-        FirstLineRendereComponent.enabled = true;
-        ballRBforSecondTrajectory = null;
-        TransparentBall.SetActive(false);
-        FirstLineRendereComponent.positionCount = points.Length;
-        GameHelper.Use.SaveBallsPosition();
+        _firstLineRendererComponent.enabled = true;
+        _ballForSecondTrajectory = null;
+        _transparentBall.SetActive(false);
+        _firstLineRendererComponent.positionCount = points.Length;
+        GameHelper.Instance.SaveBallsPosition();
 
         Physics.autoSimulation = false;
-        GameHelper.Use.BallsRB[0].AddForce(force, ForceMode.Impulse);
+        GameHelper.Instance.BallsRB[0].AddForce(force, ForceMode.Impulse);
 
-        points[0] = GameHelper.Use.BallsRB[0].position;
+        points[0] = GameHelper.Instance.BallsRB[0].position;
 
         for (int i = 1; i < points.Length; i++)
         {
             Physics.Simulate(0.2f);
-            if (GameHelper.Use.BallsRB[0].gameObject.activeSelf == true) points[i] = GameHelper.Use.BallsRB[0].position;
-            if (ballRBforSecondTrajectory != null && ballRBforSecondTrajectory.gameObject.activeSelf == true) listSecondpoints.Add(ballRBforSecondTrajectory.position);
+            if (GameHelper.Instance.BallsRB[0].gameObject.activeSelf) points[i] = GameHelper.Instance.BallsRB[0].position;
+            if (_ballForSecondTrajectory != null && _ballForSecondTrajectory.gameObject.activeSelf)
+                secondPointsList.Add(_ballForSecondTrajectory.position);
         }
         Physics.autoSimulation = true;
-        ballRBforSecondTrajectory = null;
-        GameHelper.Use.RestoreBallsPosition();
+        _ballForSecondTrajectory = null;
+        GameHelper.Instance.RestoreBallsPosition();
 
-        FirstLineRendereComponent.SetPositions(points);
-        SecondLineRendereComponent.positionCount = listSecondpoints.Count;
-        SecondLineRendereComponent.SetPositions(listSecondpoints.ToArray());
-
+        _firstLineRendererComponent.SetPositions(points);
+        _secondLineRendererComponent.positionCount = secondPointsList.Count;
+        _secondLineRendererComponent.SetPositions(secondPointsList.ToArray());
     }
 
-    public void SwitchOnSecondTrajectory(Rigidbody rigidbody, GameObject whiteBall)
+    public void SwitchOnSecondTrajectory(Rigidbody rigidBody, GameObject whiteBall)
     {
-        if (ballRBforSecondTrajectory != null) return;
-        TransparentBall.SetActive(true);
-        TransparentBall.transform.position = whiteBall.transform.position;
-        ballRBforSecondTrajectory = rigidbody;
-        SecondLineRendereComponent.enabled = true;
+        if (_ballForSecondTrajectory != null) return;
+        _transparentBall.SetActive(true);
+        _transparentBall.transform.position = whiteBall.transform.position;
+        _ballForSecondTrajectory = rigidBody;
+        _secondLineRendererComponent.enabled = true;
     }
 
     public void HideTrajectory()
     {
-        FirstLineRendereComponent.enabled = false;
-        SecondLineRendereComponent.enabled = false;
-        TransparentBall.SetActive(false);
+        _firstLineRendererComponent.enabled = false;
+        _secondLineRendererComponent.enabled = false;
+        _transparentBall.SetActive(false);
     }
 
 }
